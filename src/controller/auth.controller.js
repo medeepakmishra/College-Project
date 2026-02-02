@@ -1,4 +1,8 @@
 import User from "../models/user.model.js";
+import transporter from "../config/email.js";
+import { verifyEmailOTP } from "./verifyOtp.controller.js";
+
+
 
 export const registerUser = async (req, res) => {
   try {
@@ -21,29 +25,52 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    // 2. Check if user already exists
-    const existingUser = await User.findOne({ email });
+    // 3. Check if user already exists
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(409).json({
         message: "User already exists",
       });
     }
 
-    // 3. Create new user
+    // ============================
+    // ✅ NEW: Generate OTP
+    // ============================
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // 4. Create new user (NO existing logic removed)
     const user = new User({
-      email,
+      email: email.toLowerCase(),
       password,
-      role, // optional, default handled in model
-      number,
-      name,
+      role,          // unchanged
+      number,        // unchanged
+      name,          // unchanged
+      emailOTP: otp,
+      emailOTPExpiry: Date.now() + 10 * 60 * 1000, // 10 minutes
+      isVerified: false,
     });
 
-    // 4. Save user (password hashes automatically)
+    // 5. Save user (password hashing still works)
     await user.save();
 
-    // 5. Send response (never send password)
+    // ============================
+    // ✅ NEW: Send OTP Email
+    // ============================
+    await transporter.sendMail({
+      from: `"Placement Cell" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: "Verify your email (OTP)",
+      html: `
+        <h3>Email Verification</h3>
+        <p>Your OTP is:</p>
+        <h2>${otp}</h2>
+        <p>This OTP is valid for 10 minutes.</p>
+      `,
+    });
+
+    // 6. Response (safe)
     res.status(201).json({
-      message: "User registered successfully",
+      message: "User registered successfully. OTP sent to email.",
       user: {
         id: user._id,
         email: user.email,
@@ -51,12 +78,11 @@ export const registerUser = async (req, res) => {
         number: user.number,
       },
     });
+
   } catch (error) {
     console.error(error);
     res.status(500).json({
-      message: "Server error in regestation",
+      message: "Server error in registration",
     });
   }
-
-  console.log(req.body);
 };

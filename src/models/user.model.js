@@ -27,9 +27,18 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["user", "HOD", "Director"], // allowed roles
+      enum: ["student", "admin"], // allowed roles
       default: "user",
     },
+    
+
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
+
+  emailOTP: String,
+  emailOTPExpiry: Date
   },
   { timestamps: true }
 );
