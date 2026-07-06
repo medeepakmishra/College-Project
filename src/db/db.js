@@ -1,26 +1,35 @@
+
+
+
+
+
 import mongoose from "mongoose";
-import dotenv from 'dotenv';
-dotenv.config({ path: './.env' });
 
-const url = process.env.MONGO_URL
 
+import dns from "node:dns";
+
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
 const connectDB = async () => {
   try {
+    const url = process.env.MONGO_URL;
+
+    if (!url) {
+      throw new Error("MONGO_URL is not defined");
+    }
+
     const conn = await mongoose.connect(url, {
-      autoIndex: false,        // better for production
-      maxPoolSize: 10,         // connection pooling
+      autoIndex: false,
+      maxPoolSize: 10,
       serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000
+      socketTimeoutMS: 45000,
     });
 
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error('❌ MongoDB connection failed:', error.message);
-    process.exit(1); // crash app if DB fails
+    console.error("❌ MongoDB connection failed:", error.message);
+    process.exit(1);
   }
 };
 
-export default connectDB();
-
-// connectDB
+export default connectDB;   

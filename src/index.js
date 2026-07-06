@@ -1,20 +1,22 @@
-import 'dotenv/config';
-import app from './app.js';
-import connectDB from "./db/db.js"
-
-/* ---------- Connect Database ---------- */
-connectDB
-  .then(() => {
-    /* ---------- Start Server ---------- */
-    const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  })
-  .catch(err => {
-    console.error('Failed to start server due to DB error:', err.message);
-    process.exit(1);
-  });
 
 
+
+
+import dotenv from "dotenv";
+import connectDB from "./db/db.js";
+import app from "./app.js";
+import "dotenv/config";
+
+console.log("INDEX EMAIL USER:", !!process.env.EMAIL_USER);
+console.log("INDEX EMAIL PASS:", !!process.env.EMAIL_PASS);
+
+dotenv.config();
+
+const PORT = process.env.PORT || 3000;
+
+await connectDB();
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
 
