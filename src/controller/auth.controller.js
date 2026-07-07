@@ -434,6 +434,23 @@ export const registerUser = async (req, res) => {
     // 8. RESPONSE
     // ==========================================
 
+    // ==========================================
+// 8. RESPONSE
+// ==========================================
+
+return res.status(200).json({
+  success: true,
+
+  message: emailSent
+    ? "OTP sent successfully. Verify OTP to complete registration."
+    : "OTP generated successfully (Email service unavailable)",
+
+  email: normalizedEmail,
+
+  // TEMPORARY FOR TESTING
+  otp: otp,
+});
+
 
     const response = {
 
