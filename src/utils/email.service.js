@@ -2,31 +2,41 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export const sendOTPEmail = async (email, otp) => {
-  const { data, error } = await resend.emails.send({
-    from: "Placement Cell <onboarding@resend.dev>",
-    to: [email],
-    subject: "Email Verification OTP",
+export const sendEmail = async ({
+  to,
+  subject,
+  html,
+}) => {
+  try {
+    const { data, error } = await resend.emails.send({
+      from: "Placement Cell <onboarding@resend.dev>",
 
-    html: `
-      <div style="font-family: Arial, sans-serif;">
-        <h2>College Placement Portal</h2>
+      // Single recipient as string
+      to: to,
 
-        <p>Your verification OTP is:</p>
+      subject: subject,
 
-        <h1>${otp}</h1>
+      html: html,
+    });
 
-        <p>This OTP is valid for 10 minutes.</p>
+    if (error) {
+      console.error("Resend Email Error:", error);
 
-        <p>If you did not request this OTP, ignore this email.</p>
-      </div>
-    `,
-  });
+      throw new Error(
+        error.message || "Email sending failed"
+      );
+    }
 
-  if (error) {
-    console.error("Resend Email Error:", error);
-    throw new Error(error.message);
+    console.log("Email sent successfully:", data);
+
+    return data;
+
+  } catch (error) {
+    console.error(
+      "Email Service Error:",
+      error.message
+    );
+
+    throw error;
   }
-
-  return data;
 };
