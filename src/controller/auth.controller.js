@@ -1,6 +1,7 @@
 import User from "../models/user.model.js";
 import PendingRegistration from "../models/pendingRegistration.model.js";
 import transporter from "../config/email.js";
+import { sendEmail } from "../utils/email.service.js";
 
 
 export const registerUser = async (req, res) => {
@@ -139,56 +140,49 @@ export const registerUser = async (req, res) => {
     // 7. SEND OTP
     // ==========================================
 
-    try {
+   try {
+  await sendEmail({
+    to: normalizedEmail,
 
-      await transporter.sendMail({
+    subject: "Email Verification OTP",
 
-        from:
-          `"Placement Cell" <${process.env.EMAIL_USER}>`,
+    html: `
+      <div style="font-family: Arial, sans-serif;">
+        <h2>Placement Portal</h2>
 
-        to: normalizedEmail,
+        <p>Your verification OTP is:</p>
 
-        subject: "Email Verification OTP",
+        <h1>${otp}</h1>
 
-        html: `
-          <h2>Placement Portal</h2>
+        <p>
+          This OTP is valid for 10 minutes.
+        </p>
 
-          <p>Your verification OTP is:</p>
+        <p>
+          If you did not request this OTP,
+          you can ignore this email.
+        </p>
+      </div>
+    `,
+  });
 
-          <h1>${otp}</h1>
+} catch (emailError) {
 
-          <p>
-            This OTP is valid for 10 minutes.
-          </p>
-        `,
+  // Email failed, remove pending registration
+  await PendingRegistration.deleteOne({
+    email: normalizedEmail,
+  });
 
-      });
+  console.error(
+    "OTP Email Error:",
+    emailError.message
+  );
 
-
-    } catch (emailError) {
-
-      // Email failed, remove pending registration
-      await PendingRegistration.deleteOne({
-        email: normalizedEmail,
-      });
-
-
-      console.error(
-        "OTP Email Error:",
-        emailError.message
-      );
-
-
-      return res.status(500).json({
-
-        success: false,
-
-        message:
-          "Unable to send OTP. Please try again.",
-
-      });
-
-    }
+  return res.status(500).json({
+    success: false,
+    message: "Unable to send OTP. Please try again.",
+  });
+}
 
 
     // ==========================================
