@@ -13,7 +13,7 @@ import { authorizeRoles } from "../middleware/role.middleware.js";
 
 const router = express.Router();
 
-
+  
 /* =====================================================
    STUDENT ROUTES
 ===================================================== */

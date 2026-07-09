@@ -24,6 +24,11 @@ const companySchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    skills: [
+      {
+        type: String,
+      },
+    ],
 
     description: {
       type: String,
@@ -39,7 +44,15 @@ const companySchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-
+    selectionProcess: [
+      {
+        type: String,
+      },
+    ],
+    bond: {
+      type: String,
+      default: "",
+    },
     hrContact: {
       type: String,
       default: "",

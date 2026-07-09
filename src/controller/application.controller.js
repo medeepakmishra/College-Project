@@ -42,6 +42,7 @@ export const applyToDrive = async (req, res) => {
     const drive = await PlacementDrive.findOne({
       _id: driveId,
       isActive: true,
+      status:"open"
     });
 
     if (!drive) {
