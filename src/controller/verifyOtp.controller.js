@@ -1,7 +1,42 @@
+
+
+
+
+
+
+
+
+// import jwt from "jsonwebtoken";
+
 // import User from "../models/user.model.js";
 // import PendingRegistration from "../models/pendingRegistration.model.js";
 
+
+// // ==========================================
+// // GENERATE JWT
+// // ==========================================
+
+// const generateToken = (userId) => {
+
+//   return jwt.sign(
+//     {
+//       id: userId,
+//     },
+//     process.env.JWT_SECRET,
+//     {
+//       expiresIn: "7d",
+//     }
+//   );
+
+// };
+
+
+// // ==========================================
+// // VERIFY EMAIL OTP
+// // ==========================================
+
 // export const verifyEmailOTP = async (req, res) => {
+
 //   try {
 
 //     const { email, otp } = req.body;
@@ -13,8 +48,7 @@
 
 //         success: false,
 
-//         message:
-//           "Email and OTP are required",
+//         message: "Email and OTP are required",
 
 //       });
 
@@ -49,8 +83,7 @@
 
 //         success: false,
 
-//         message:
-//           "Invalid or expired OTP",
+//         message: "Invalid or expired OTP",
 
 //       });
 
@@ -58,14 +91,21 @@
 
 
 //     // ==========================================
-//     // DOUBLE CHECK USER DOES NOT EXIST
+//     // CHECK EXISTING USER
 //     // ==========================================
 
 //     const existingUser = await User.findOne({
 
 //       $or: [
-//         { email: pendingUser.email },
-//         { number: pendingUser.number },
+
+//         {
+//           email: pendingUser.email,
+//         },
+
+//         {
+//           number: pendingUser.number,
+//         },
+
 //       ],
 
 //     });
@@ -74,7 +114,9 @@
 //     if (existingUser) {
 
 //       await PendingRegistration.deleteOne({
+
 //         _id: pendingUser._id,
+
 //       });
 
 
@@ -82,8 +124,7 @@
 
 //         success: false,
 
-//         message:
-//           "User already exists",
+//         message: "User already exists",
 
 //       });
 
@@ -93,13 +134,9 @@
 //     // ==========================================
 //     // CREATE VERIFIED USER
 //     // ==========================================
-//     //
-//     // Using collection.insertOne intentionally
-//     // because pendingUser.password is already hashed.
-//     // This avoids hashing the password twice.
-//     // ==========================================
 
 //     const now = new Date();
+
 
 //     const result =
 //       await User.collection.insertOne({
@@ -124,7 +161,16 @@
 
 
 //     // ==========================================
-//     // REMOVE TEMPORARY REGISTRATION
+//     // GENERATE JWT TOKEN
+//     // ==========================================
+
+//     const token = generateToken(
+//       result.insertedId
+//     );
+
+
+//     // ==========================================
+//     // REMOVE PENDING REGISTRATION
 //     // ==========================================
 
 //     await PendingRegistration.deleteOne({
@@ -134,6 +180,10 @@
 //     });
 
 
+//     // ==========================================
+//     // RESPONSE
+//     // ==========================================
+
 //     return res.status(201).json({
 
 //       success: true,
@@ -141,11 +191,15 @@
 //       message:
 //         "Email verified and account created successfully",
 
+//       token,
+
 //       user: {
 
 //         id: result.insertedId,
 
 //         name: pendingUser.name,
+
+//         number: pendingUser.number,
 
 //         email: pendingUser.email,
 
@@ -183,236 +237,326 @@
 
 
 
-
-
 import jwt from "jsonwebtoken";
+
+import bcrypt from "bcrypt";
 
 import User from "../models/user.model.js";
 import PendingRegistration from "../models/pendingRegistration.model.js";
 
 
+
 // ==========================================
-// GENERATE JWT
+// GENERATE TOKEN
 // ==========================================
 
-const generateToken = (userId) => {
+const generateToken = (user) => {
 
   return jwt.sign(
+
     {
-      id: userId,
+      id:user._id,
+      role:user.role
     },
+
     process.env.JWT_SECRET,
+
     {
-      expiresIn: "7d",
+      expiresIn:"7d"
     }
+
   );
 
 };
+
+
+
 
 
 // ==========================================
 // VERIFY EMAIL OTP
 // ==========================================
 
-export const verifyEmailOTP = async (req, res) => {
 
-  try {
+export const verifyEmailOTP = async(req,res)=>{
 
-    const { email, otp } = req.body;
 
+try{
 
-    if (!email || !otp) {
 
-      return res.status(400).json({
+const {
+email,
+otp
+}=req.body;
 
-        success: false,
 
-        message: "Email and OTP are required",
 
-      });
+if(!email || !otp){
 
-    }
+return res.status(400).json({
 
+success:false,
 
-    const normalizedEmail =
-      email.toLowerCase().trim();
+message:
+"Email and OTP are required"
 
+});
 
-    // ==========================================
-    // FIND PENDING REGISTRATION
-    // ==========================================
+}
 
-    const pendingUser =
-      await PendingRegistration.findOne({
 
-        email: normalizedEmail,
 
-        otp,
+const normalizedEmail =
+email.toLowerCase().trim();
 
-        otpExpiry: {
-          $gt: new Date(),
-        },
 
-      });
 
 
-    if (!pendingUser) {
+// ==========================================
+// FIND PENDING USER
+// ==========================================
 
-      return res.status(400).json({
 
-        success: false,
+const pendingUser =
+await PendingRegistration.findOne({
 
-        message: "Invalid or expired OTP",
+email:normalizedEmail
 
-      });
+});
 
-    }
 
 
-    // ==========================================
-    // CHECK EXISTING USER
-    // ==========================================
+if(!pendingUser){
 
-    const existingUser = await User.findOne({
 
-      $or: [
+return res.status(400).json({
 
-        {
-          email: pendingUser.email,
-        },
+success:false,
 
-        {
-          number: pendingUser.number,
-        },
+message:
+"Registration request not found"
 
-      ],
+});
 
-    });
 
+}
 
-    if (existingUser) {
 
-      await PendingRegistration.deleteOne({
 
-        _id: pendingUser._id,
 
-      });
 
+// ==========================================
+// CHECK OTP EXPIRY
+// ==========================================
 
-      return res.status(409).json({
 
-        success: false,
+if(
+new Date() > pendingUser.otpExpiry
+){
 
-        message: "User already exists",
+return res.status(400).json({
 
-      });
+success:false,
 
-    }
+message:
+"OTP expired"
 
+});
 
-    // ==========================================
-    // CREATE VERIFIED USER
-    // ==========================================
+}
 
-    const now = new Date();
 
 
-    const result =
-      await User.collection.insertOne({
 
-        name: pendingUser.name,
+// ==========================================
+// VERIFY OTP
+// ==========================================
 
-        number: pendingUser.number,
 
-        email: pendingUser.email,
+if(
+pendingUser.otp !== otp
+){
 
-        password: pendingUser.password,
+return res.status(400).json({
 
-        role: "student",
+success:false,
 
-        isVerified: true,
+message:
+"Invalid OTP"
 
-        createdAt: now,
+});
 
-        updatedAt: now,
+}
 
-      });
 
 
-    // ==========================================
-    // GENERATE JWT TOKEN
-    // ==========================================
 
-    const token = generateToken(
-      result.insertedId
-    );
 
+// ==========================================
+// CHECK USER AGAIN
+// ==========================================
 
-    // ==========================================
-    // REMOVE PENDING REGISTRATION
-    // ==========================================
 
-    await PendingRegistration.deleteOne({
+const existingUser =
+await User.findOne({
 
-      _id: pendingUser._id,
+$or:[
 
-    });
+{
+email:pendingUser.email
+},
 
+{
+number:pendingUser.number
+}
 
-    // ==========================================
-    // RESPONSE
-    // ==========================================
+]
 
-    return res.status(201).json({
+});
 
-      success: true,
 
-      message:
-        "Email verified and account created successfully",
 
-      token,
+if(existingUser){
 
-      user: {
 
-        id: result.insertedId,
+await PendingRegistration.deleteOne({
 
-        name: pendingUser.name,
+_id:pendingUser._id
 
-        number: pendingUser.number,
+});
 
-        email: pendingUser.email,
 
-        role: "student",
+return res.status(409).json({
 
-      },
+success:false,
 
-    });
+message:
+"User already exists"
 
+});
 
-  } catch (error) {
 
-    console.error(
-      "Verify Registration OTP Error:",
-      error
-    );
+}
 
 
-    return res.status(500).json({
 
-      success: false,
 
-      message:
-        "Server error during OTP verification",
 
-    });
+// ==========================================
+// CREATE USER
+// ==========================================
 
-  }
+
+const user =
+await User.create({
+
+name:
+pendingUser.name,
+
+
+email:
+pendingUser.email,
+
+
+number:
+pendingUser.number,
+
+
+password:
+pendingUser.password,
+
+
+role:"student",
+
+
+isVerified:true
+
+});
+
+
+
+
+// ==========================================
+// DELETE PENDING DATA
+// ==========================================
+
+
+await PendingRegistration.deleteOne({
+
+_id:pendingUser._id
+
+});
+
+
+
+
+// ==========================================
+// TOKEN
+// ==========================================
+
+
+const token =
+generateToken(user);
+
+
+
+
+// ==========================================
+// RESPONSE
+// ==========================================
+
+
+return res.status(201).json({
+
+success:true,
+
+message:
+"Email verified and account created successfully",
+
+
+token,
+
+
+user:{
+
+id:user._id,
+
+name:user.name,
+
+email:user.email,
+
+number:user.number,
+
+role:user.role
+
+}
+
+});
+
+
+
+}
+catch(error){
+
+
+console.error(
+"OTP Verification Error:",
+error
+);
+
+
+
+return res.status(500).json({
+
+success:false,
+
+message:
+"Server error during OTP verification"
+
+});
+
+
+}
+
 
 };
-
-
-
-
-
-
-

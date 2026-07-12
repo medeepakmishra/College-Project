@@ -1,42 +1,71 @@
-import { Resend } from "resend";
+import axios from "axios";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const sendEmail = async ({
-  to,
-  subject,
-  html,
+    to,
+    subject,
+    html
 }) => {
-  try {
-    const { data, error } = await resend.emails.send({
-      from: "Placement Cell <onboarding@resend.dev>",
 
-      // Single recipient as string
-      to: to,
 
-      subject: subject,
+    try {
 
-      html: html,
-    });
 
-    if (error) {
-      console.error("Resend Email Error:", error);
+        const response = await axios.post(
 
-      throw new Error(
-        error.message || "Email sending failed"
-      );
+            "https://api.brevo.com/v3/smtp/email",
+
+            {
+
+                sender:{
+                    name:"RMLAU Placement Portal",
+                    email:process.env.BREVO_EMAIL
+                },
+
+
+                to:[
+                    {
+                        email:to
+                    }
+                ],
+
+
+                subject,
+
+
+                htmlContent:html
+
+            },
+
+
+            {
+
+                headers:{
+                    "api-key":
+                    process.env.BREVO_API_KEY,
+
+                    "Content-Type":
+                    "application/json"
+                }
+
+            }
+
+        );
+
+
+        return response.data;
+
+
+    } catch(error){
+
+        console.log(
+            "Email Error:",
+            error.response?.data ||
+            error.message
+        );
+
+        throw error;
+
     }
 
-    console.log("Email sent successfully:", data);
-
-    return data;
-
-  } catch (error) {
-    console.error(
-      "Email Service Error:",
-      error.message
-    );
-
-    throw error;
-  }
 };

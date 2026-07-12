@@ -8,6 +8,8 @@ import companyRoutes from "./routes/company.route.js";
 import applicationRoutes from "./routes/application.route.js";
 import dashboardRoutes from "./routes/dashboard.route.js";
 import announcementRoutes from "./routes/announcement.route.js";
+import aiRoutes from "./routes/ai.route.js";
+import uploadRoutes from "./routes/upload.route.js";
 
 
 const app = express();
@@ -48,6 +50,26 @@ app.use("/api/application", applicationRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
 app.use("/api/announcement", announcementRoutes);
+
+app.use("/api/ai", aiRoutes);
+
+app.use("/api/upload", uploadRoutes);
+
+
+
+
+
+
+app.use((err, req, res, next) => {
+  console.error("GLOBAL ERROR:");
+  console.error(err);
+
+  res.status(500).json({
+    success: false,
+    message: err.message,
+    stack: err.stack,
+  });
+});
 
 
 

@@ -67,3 +67,11 @@ const PendingRegistration = mongoose.model(
 );
 
 export default PendingRegistration;
+
+
+
+
+
+
+
+
