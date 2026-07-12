@@ -1,40 +1,111 @@
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
 
+
 export const protect = async (req, res, next) => {
+
   try {
+
     let token;
 
-    // check token in headers
+
+    // Get token from header
+
     if (
       req.headers.authorization &&
       req.headers.authorization.startsWith("Bearer")
     ) {
-      token = req.headers.authorization.split(" ")[1];
+
+      token =
+        req.headers.authorization.split(" ")[1];
+
     }
+
+
 
     if (!token) {
+
       return res.status(401).json({
-        message: "Not authorized, token missing",
+
+        success:false,
+
+        message:
+        "User is not authenticated"
+
       });
+
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    req.user = await User.findById(decoded.userId);
+
+    // Verify token
+
+    const decoded =
+      jwt.verify(
+        token,
+        process.env.JWT_SECRET
+      );
+
+
+
+    console.log(
+      "Decoded JWT:",
+      decoded
+    );
+
+
+
+    // IMPORTANT FIX HERE
+
+    req.user =
+      await User.findById(
+        decoded.id
+      );
+
+
+
+    if(!req.user){
+
+      return res.status(401).json({
+
+        success:false,
+
+        message:
+        "User not found"
+
+      });
+
+    }
+
+
 
     next();
 
-  } catch (error) {
-    return res.status(401).json({
-      message: "Not authorized, invalid token",
-    });
+
+
   }
+  catch(error){
+
+
+    console.error(
+      "Auth Error:",
+      error
+    );
+
+
+    return res.status(401).json({
+
+      success:false,
+
+      message:
+      "Invalid token"
+
+    });
+
+
+  }
+
 };
-
-
-
-
 
 
 
