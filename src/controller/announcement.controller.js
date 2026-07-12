@@ -4,41 +4,78 @@ import Announcement from "../models/announcement.model.js";
    CREATE ANNOUNCEMENT (ADMIN)
 ===================================================== */
 
-export const createAnnouncement = async (req, res) => {
-  try {
-    const { title, description, category } = req.body;
+// export const createAnnouncement = async (req, res) => {
+//   try {
 
-    if (!title || !description) {
-      return res.status(400).json({
-        success: false,
-        message: "Title and description are required",
-      });
-    }
+//     console.log("ANNOUNCEMENT BODY:",req.body);
+// console.log("USER:",req.user);
+//     const { title, description, category } = req.body;
 
-    const announcement = await Announcement.create({
-      title,
-      description,
-      category,
-      createdBy: req.user._id,
-    });
+//     if (!title || !description) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Title and description are required",
+//       });
+//     }
 
-    res.status(201).json({
-      success: true,
-      message: "Announcement created successfully",
-      announcement,
-    });
+//     const announcement = await Announcement.create({
+//       title,
+//       description,
+//       category,
+//       createdBy: req.user._id,
+//     });
 
-  } catch (error) {
-    console.error("Create Announcement Error:", error);
+//     res.status(201).json({
+//       success: true,
+//       message: "Announcement created successfully",
+//       announcement,
+//     });
 
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
-  }
-};
+//   } catch (error) {
+//     console.error("Create Announcement Error:", error);
+
+//     res.status(500).json({
+//       success: false,
+//       message: "Server Error",
+//     });
+//   }
+// };
+
+export const createAnnouncement = async(req,res)=>{
+
+try{
+
+console.log("BODY:",req.body);
+
+const announcement = await Announcement.create({
+
+    title: req.body.title,
+
+    description: req.body.message,
+
+    createdBy: req.user._id
+
+});
+
+return res.status(201).json({
+    success:true,
+    announcement
+});
 
 
+}
+catch(error){
+
+console.log("CREATE ANNOUNCEMENT ERROR:",error);
+
+return res.status(400).json({
+    success:false,
+    message:error.message
+});
+
+}
+
+}
 /* =====================================================
    GET ALL ANNOUNCEMENTS
 ===================================================== */
