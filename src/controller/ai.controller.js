@@ -1,9 +1,12 @@
 import { askCareerAI } from "../services/ai.service.js";
 import { analyzeResume } from "../services/resume.service.js";
 
+
+
 // ===========================
 // AI CHAT
 // ===========================
+// console.log("Resume URL:", profile.resume.url);
 export const chatWithAI = async (req, res) => {
   try {
     const { message } = req.body;
@@ -40,6 +43,10 @@ export const chatWithAI = async (req, res) => {
 // ===========================
 export const analyzeResumeAI = async (req, res) => {
   try {
+
+    console.log("AI USER:", req.user);
+
+        console.log("AI BODY:", req.body);
 
     const analysis = await analyzeResume(req.user._id);
 

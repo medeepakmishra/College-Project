@@ -13,8 +13,7 @@ export const createStudentProfile = async (req, res) => {
 
     if (existingProfile) {
       return res.status(400).json({
-        success: false,
-        message: "Student profile already exists",
+        message: "Profile already exists",
       });
     }
 
@@ -60,7 +59,7 @@ export const createStudentProfile = async (req, res) => {
       user: req.user._id,
 
       rollNumber,
-      enrollmentNumber, 
+      enrollmentNumber,
       department,
       course,
       batch,
@@ -77,7 +76,10 @@ export const createStudentProfile = async (req, res) => {
       github: github ?? "",
       linkedin: linkedin ?? "",
       portfolio: portfolio ?? "",
-      resume: resume ?? "",
+      resume: {
+        url: typeof resume === "string" ? resume : resume?.url || "",
+        publicId: resume?.publicId || "",
+      },
 
       // Student cannot control these values
       isPlaced: false,
@@ -127,6 +129,13 @@ export const createStudentProfile = async (req, res) => {
 ===================================================== */
 
 export const getMyProfile = async (req, res) => {
+  console.log("Logged user:", req.user._id);
+
+  const profile = await StudentProfile.findOne({
+    user: req.user._id,
+  });
+
+  console.log("Profile:", profile);
   try {
     const profile = await StudentProfile.findOne({
       user: req.user._id,

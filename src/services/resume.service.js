@@ -20,14 +20,17 @@ export const analyzeResume = async (userId) => {
   }
 
   // Extract text from resume
-  const resumeText = await extractPdfText(student.resume);
+  // const resumeText = await extractPdfText(student.resume);
+  const resumeText = await extractPdfText(
+    student.resume.url
+);
 
   // Build AI prompt
   const prompt = buildResumePrompt(student, resumeText);
 
   // Ask Gemini
   const response = await ai.models.generateContent({
-    model: "ggemini-3.1-flash-lite",
+    model: "gemini-3.1-flash-lite",
     contents: prompt,
   });
 
