@@ -237,9 +237,333 @@
 
 
 
-import jwt from "jsonwebtoken";
+// import jwt from "jsonwebtoken";
 
-import bcrypt from "bcrypt";
+// import bcrypt from "bcrypt";
+
+// import User from "../models/user.model.js";
+// import PendingRegistration from "../models/pendingRegistration.model.js";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// // ==========================================
+// // VERIFY EMAIL OTP
+// // ==========================================
+
+
+// export const verifyEmailOTP = async(req,res)=>{
+
+
+// try{
+
+
+// const {
+// email,
+// otp
+// }=req.body;
+
+
+
+// if(!email || !otp){
+
+// return res.status(400).json({
+
+// success:false,
+
+// message:
+// "Email and OTP are required"
+
+// });
+
+// }
+
+
+
+// const normalizedEmail =
+// email.toLowerCase().trim();
+
+
+
+
+// // ==========================================
+// // FIND PENDING USER
+// // ==========================================
+
+
+// const pendingUser =
+// await PendingRegistration.findOne({
+
+// email:normalizedEmail
+
+// });
+
+
+
+// if(!pendingUser){
+
+
+// return res.status(400).json({
+
+// success:false,
+
+// message:
+// "Registration request not found"
+
+// });
+
+
+// }
+
+
+
+
+
+// // ==========================================
+// // CHECK OTP EXPIRY
+// // ==========================================
+
+
+// if(
+// new Date() > pendingUser.otpExpiry
+// ){
+
+// return res.status(400).json({
+
+// success:false,
+
+// message:
+// "OTP expired"
+
+// });
+
+// }
+
+
+
+
+// // ==========================================
+// // VERIFY OTP
+// // ==========================================
+
+
+// if(
+// pendingUser.otp !== otp
+// ){
+
+// return res.status(400).json({
+
+// success:false,
+
+// message:
+// "Invalid OTP"
+
+// });
+
+// }
+
+
+
+
+
+// // ==========================================
+// // CHECK USER AGAIN
+// // ==========================================
+
+
+// const existingUser =
+// await User.findOne({
+
+// $or:[
+
+// {
+// email:pendingUser.email
+// },
+
+// {
+// number:pendingUser.number
+// }
+
+// ]
+
+// });
+
+
+
+// if(existingUser){
+
+
+// await PendingRegistration.deleteOne({
+
+// _id:pendingUser._id
+
+// });
+
+
+// return res.status(409).json({
+
+// success:false,
+
+// message:
+// "User already exists"
+
+// });
+
+
+// }
+
+
+
+
+
+// // ==========================================
+// // CREATE USER
+// // ==========================================
+
+
+// const user =
+// await User.create({
+
+// name:
+// pendingUser.name,
+
+
+// email:
+// pendingUser.email,
+
+
+// number:
+// pendingUser.number,
+
+
+// password:
+// pendingUser.password,
+
+
+// role:"student",
+
+
+// isVerified:true
+
+// });
+
+
+
+
+// // ==========================================
+// // DELETE PENDING DATA
+// // ==========================================
+
+
+// await PendingRegistration.deleteOne({
+
+// _id:pendingUser._id
+
+// });
+
+
+
+
+// // ==========================================
+// // TOKEN
+// // ==========================================
+
+
+// const token =
+// generateToken(user);
+
+
+
+
+// // ==========================================
+// // RESPONSE
+// // ==========================================
+
+
+// return res.status(201).json({
+
+// success:true,
+
+// message:
+// "Email verified and account created successfully",
+
+
+// token,
+
+
+// user:{
+
+// id:user._id,
+
+// name:user.name,
+
+// email:user.email,
+
+// number:user.number,
+
+// role:user.role
+
+// }
+
+// });
+
+
+
+// }
+// catch(error){
+
+
+// console.error(
+// "OTP Verification Error:",
+// error
+// );
+
+
+
+// return res.status(500).json({
+
+// success:false,
+
+// message:
+// "Server error during OTP verification"
+
+// });
+
+
+// }
+
+
+// };
+
+
+
+
+
+
+
+
+
+
+
+
+
+import jwt from "jsonwebtoken";
 
 import User from "../models/user.model.js";
 import PendingRegistration from "../models/pendingRegistration.model.js";
@@ -247,28 +571,23 @@ import PendingRegistration from "../models/pendingRegistration.model.js";
 
 
 // ==========================================
-// GENERATE TOKEN
+// GENERATE JWT TOKEN
 // ==========================================
 
 const generateToken = (user) => {
 
-  return jwt.sign(
-
-    {
-      id:user._id,
-      role:user.role
-    },
-
-    process.env.JWT_SECRET,
-
-    {
-      expiresIn:"7d"
-    }
-
-  );
+    return jwt.sign(
+        {
+            id: user._id.toString(),
+            role: user.role
+        },
+        process.env.JWT_SECRET,
+        {
+            expiresIn: "7d"
+        }
+    );
 
 };
-
 
 
 
@@ -277,286 +596,342 @@ const generateToken = (user) => {
 // VERIFY EMAIL OTP
 // ==========================================
 
+export const verifyEmailOTP = async (req, res) => {
 
-export const verifyEmailOTP = async(req,res)=>{
+    try {
 
 
-try{
+        const {
+            email,
+            otp
+        } = req.body;
 
 
-const {
-email,
-otp
-}=req.body;
 
+        if (!email || !otp) {
 
+            return res.status(400).json({
 
-if(!email || !otp){
+                success:false,
 
-return res.status(400).json({
+                message:
+                "Email and OTP are required"
 
-success:false,
+            });
 
-message:
-"Email and OTP are required"
+        }
 
-});
 
-}
 
+        const normalizedEmail =
+            email.toLowerCase().trim();
 
 
-const normalizedEmail =
-email.toLowerCase().trim();
 
+        const cleanOtp =
+            otp.toString().trim();
 
 
 
-// ==========================================
-// FIND PENDING USER
-// ==========================================
+        console.log(
+            "Searching pending user:",
+            normalizedEmail
+        );
 
 
-const pendingUser =
-await PendingRegistration.findOne({
 
-email:normalizedEmail
+        // ==========================================
+        // FIND PENDING REGISTRATION
+        // ==========================================
 
-});
 
+        const pendingUser =
+            await PendingRegistration.findOne({
 
+                email: normalizedEmail
 
-if(!pendingUser){
+            });
 
 
-return res.status(400).json({
 
-success:false,
+        console.log(
+            "Pending User:",
+            pendingUser
+        );
 
-message:
-"Registration request not found"
 
-});
 
+        if (!pendingUser) {
 
-}
+            return res.status(400).json({
 
+                success:false,
 
+                message:
+                "Registration request not found"
 
+            });
 
+        }
 
-// ==========================================
-// CHECK OTP EXPIRY
-// ==========================================
 
 
-if(
-new Date() > pendingUser.otpExpiry
-){
 
-return res.status(400).json({
 
-success:false,
+        // ==========================================
+        // CHECK OTP EXPIRY
+        // ==========================================
 
-message:
-"OTP expired"
 
-});
+        if (
+            new Date() > pendingUser.otpExpiry
+        ) {
 
-}
 
+            return res.status(400).json({
 
+                success:false,
 
+                message:
+                "OTP expired"
 
-// ==========================================
-// VERIFY OTP
-// ==========================================
+            });
 
 
-if(
-pendingUser.otp !== otp
-){
+        }
 
-return res.status(400).json({
 
-success:false,
 
-message:
-"Invalid OTP"
 
-});
 
-}
+        // ==========================================
+        // VERIFY OTP
+        // ==========================================
 
 
+        if (
+            pendingUser.otp !== cleanOtp
+        ) {
 
 
+            return res.status(400).json({
 
-// ==========================================
-// CHECK USER AGAIN
-// ==========================================
+                success:false,
 
+                message:
+                "Invalid OTP"
 
-const existingUser =
-await User.findOne({
+            });
 
-$or:[
 
-{
-email:pendingUser.email
-},
+        }
 
-{
-number:pendingUser.number
-}
 
-]
 
-});
 
 
+        // ==========================================
+        // CHECK EXISTING USER
+        // ==========================================
 
-if(existingUser){
 
+        const existingUser =
+            await User.findOne({
 
-await PendingRegistration.deleteOne({
+                $or:[
 
-_id:pendingUser._id
+                    {
+                        email:
+                        pendingUser.email
+                    },
 
-});
+                    {
+                        number:
+                        pendingUser.number
+                    }
 
+                ]
 
-return res.status(409).json({
+            });
 
-success:false,
 
-message:
-"User already exists"
 
-});
+        if(existingUser){
 
 
-}
+            await PendingRegistration.deleteOne({
 
+                _id:
+                pendingUser._id
 
+            });
 
 
+            return res.status(409).json({
 
-// ==========================================
-// CREATE USER
-// ==========================================
+                success:false,
 
+                message:
+                "User already exists"
 
-const user =
-await User.create({
+            });
 
-name:
-pendingUser.name,
 
+        }
 
-email:
-pendingUser.email,
 
 
-number:
-pendingUser.number,
 
 
-password:
-pendingUser.password,
 
+        // ==========================================
+        // CREATE VERIFIED USER
+        // ==========================================
 
-role:"student",
 
+        const user =
+            new User({
 
-isVerified:true
+                name:
+                pendingUser.name,
 
-});
 
+                email:
+                pendingUser.email,
 
 
+                number:
+                pendingUser.number,
 
-// ==========================================
-// DELETE PENDING DATA
-// ==========================================
 
+                password:
+                pendingUser.password,
 
-await PendingRegistration.deleteOne({
 
-_id:pendingUser._id
+                role:
+                "student",
 
-});
 
+                isVerified:
+                true
 
+            });
 
 
-// ==========================================
-// TOKEN
-// ==========================================
 
+        await user.save();
 
-const token =
-generateToken(user);
 
 
 
 
-// ==========================================
-// RESPONSE
-// ==========================================
+        console.log(
+            "User created:",
+            user.email
+        );
 
 
-return res.status(201).json({
 
-success:true,
 
-message:
-"Email verified and account created successfully",
 
+        // ==========================================
+        // DELETE PENDING USER
+        // ==========================================
 
-token,
 
+        await PendingRegistration.deleteOne({
 
-user:{
+            _id:
+            pendingUser._id
 
-id:user._id,
+        });
 
-name:user.name,
 
-email:user.email,
 
-number:user.number,
 
-role:user.role
 
-}
 
-});
+        // ==========================================
+        // GENERATE TOKEN
+        // ==========================================
 
 
+        const token =
+            generateToken(user);
 
-}
-catch(error){
 
 
-console.error(
-"OTP Verification Error:",
-error
-);
 
 
 
-return res.status(500).json({
+        // ==========================================
+        // RESPONSE
+        // ==========================================
 
-success:false,
 
-message:
-"Server error during OTP verification"
+        return res.status(201).json({
 
-});
+            success:true,
 
 
-}
+            message:
+            "Email verified and account created successfully",
+
+
+            token,
+
+
+            user:{
+
+
+                id:
+                user._id,
+
+
+                name:
+                user.name,
+
+
+                email:
+                user.email,
+
+
+                number:
+                user.number,
+
+
+                role:
+                user.role
+
+
+            }
+
+
+        });
+
+
+
+    }
+    catch(error){
+
+
+        console.error(
+            "OTP Verification Error:",
+            error
+        );
+
+
+        return res.status(500).json({
+
+            success:false,
+
+            message:
+            error.message
+
+        });
+
+
+    }
 
 
 };
